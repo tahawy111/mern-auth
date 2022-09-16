@@ -6,7 +6,7 @@ import Post from "./pages/Post";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 function App() {
-  const user = true;
+  const user = false;
   return (
     <BrowserRouter>
       <div>
