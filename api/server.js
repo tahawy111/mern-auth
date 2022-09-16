@@ -1,9 +1,11 @@
-const express = require("express");
-const cors = require("cors");
-const morgan = require("morgan");
-const mongoose = require("mongoose");
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import routes from "./routes/index.js";
 const app = express();
-require("dotenv").config({
+dotenv.config({
   path: "./config/config.env",
 });
 
@@ -20,7 +22,8 @@ if (process.env.NODE_DEV === "development") {
   app.use(morgan("dev"));
   // morgan gives information about each request
 }
-require("./routes")(app);
+
+routes(app);
 
 app.use((req, res, next) => {
   res.status(404).json({ success: false, message: "Page not founded" });
