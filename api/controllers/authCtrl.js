@@ -31,7 +31,26 @@ export const register = async (req, res) => {
     });
   }
 
-  const token = jwt.sign({ name, email, password }, process.env.JWT_SECRET);
+  const token = jwt.sign(
+    { name, email, password },
+    process.env.JWT_ACCOUNT_ACTIVATION,
+    {
+      expiresIn: "15m",
+    }
+  );
+
+  const emailData = {
+    form: process.env.EMAIL_FORM,
+    to: to,
+    subject: "TAHAWY ACTIVATION LINK",
+    html: `
+        <h1>Please click on link to activate</h1>
+        <p>${process.env.CLIENT_URL}/users/activate/${token}</p>
+        <hr/>
+        <p>This email contain senstive info</p>
+        <p>${process.env.CLIENT_URL}</p>
+    `,
+  };
 
   return res.status(200).json({
     success: true,
