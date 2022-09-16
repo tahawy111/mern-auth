@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sendMail = require("./sendMail");
 
 const { CLIENT_URL } = process.env;
 
@@ -31,9 +32,7 @@ exports.register = async (req, res) => {
 
     const url = `${CLIENT_URL}/user/activate/${activation_token}`;
 
-    //     sendMail(email, url);
-
-    console.log({ activation_token });
+    sendMail(email, url, "txt");
 
     return res.status(200).json({
       message: "Register Success! Please activate your email to start.",
