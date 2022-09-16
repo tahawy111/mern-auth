@@ -4,28 +4,26 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Please enter your name!"],
+      required: true,
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "Please enter your email!"],
+      required: true,
       trim: true,
       unique: true,
+      lowercase: true,
     },
-    password: {
+    hashed_password: {
       type: String,
-      required: [true, "Please enter your password!"],
+      required: true,
     },
+    salt: String,
     role: {
-      type: Number,
-      default: 0, // 0 = user, 1 = admin
-    },
-    avatar: {
       type: String,
-      default:
-        "https://res.cloudinary.com/devatchannel/image/upload/v1602752402/avatar/avatar_cugq40.png",
+      default: "Normal",
     },
+    reset_passwordLink: { data: String, default: "" },
   },
   { timestamps: true }
 );
