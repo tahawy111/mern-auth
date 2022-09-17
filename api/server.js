@@ -27,25 +27,21 @@ if (process.env.NODE_DEV === "development") {
 routes(app);
 
 app.post("/send_mail", async (req, res) => {
-  let text = `
-        <h1>Please click on link to activate</h1>
-        <p>${process.env.CLIENT_URL}/users/activate</p>
-        <hr/>
-        <p>This email contain senstive info</p>
-        <p>${process.env.CLIENT_URL}</p>
-    `;
   const transport = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: process.env.MAIL_PORT,
-    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+    service: "gmail",
+    port: 465,
+    auth: { user: "amerfake55@gmail.com", pass: "amer@AA@582" },
+  });
+  const info = await transport.sendMail({
+    from: "amerfake55@gmail.com",
+    to: "amer.vib582@gmail.com",
+    subject: "test email",
+    html: "Email test",
   });
 
-  await transport.sendMail({
-    from: process.env.MAIL_FROM,
-    to: "elfathstore.ymka@gmail.com",
-    subject: "test email",
-    html: text,
-  });
+  if (info.messageId) {
+    res.send("email sent");
+  }
 });
 
 app.use((req, res, next) => {

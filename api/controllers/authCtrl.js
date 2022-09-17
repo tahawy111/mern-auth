@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import expressJwt from "express-jwt";
 // const _ = require("loadash");
 import { OAuth2Client } from "google-auth-library";
+import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
 
 export const register = async (req, res) => {
@@ -39,9 +40,18 @@ export const register = async (req, res) => {
     }
   );
 
+  const transport = nodemailer.createTransport({
+    // host: process.env.MAIL_HOST,
+    // port: process.env.MAIL_PORT,
+    service: "gmail",
+    from: process.env.MAIL_FROM,
+    to: email,
+    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+  });
+
   const emailData = {
-    form: process.env.EMAIL_FORM,
-    to: to,
+    from: process.env.MAIL_FROM,
+    to: email,
     subject: "TAHAWY ACTIVATION LINK",
     html: `
         <h1>Please click on link to activate</h1>
@@ -51,6 +61,10 @@ export const register = async (req, res) => {
         <p>${process.env.CLIENT_URL}</p>
     `,
   };
+
+  transport.sendMail(emailData, (err, info) => {
+    console.log("Done");
+  });
 
   return res.status(200).json({
     success: true,
