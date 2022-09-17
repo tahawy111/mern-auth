@@ -41,8 +41,6 @@ export const register = async (req, res) => {
   );
 
   const transport = nodemailer.createTransport({
-    // host: process.env.MAIL_HOST,
-    // port: process.env.MAIL_PORT,
     service: "gmail",
     from: process.env.MAIL_FROM,
     to: email,
@@ -64,6 +62,10 @@ export const register = async (req, res) => {
 
   transport.sendMail(emailData, (err, info) => {
     console.log("Done");
+    return res.status(200).json({
+      success: true,
+      message: "you send email",
+    });
   });
 
   return res.status(200).json({
