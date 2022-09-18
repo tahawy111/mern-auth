@@ -1,19 +1,21 @@
 import User from "../models/User.js";
-import expressJwt from "express-jwt";
-// const _ = require("loadash");
-import { OAuth2Client } from "google-auth-library";
-import nodemailer from "nodemailer";
 import jwt from "jsonwebtoken";
+import sendMail from "../utils/sendMail.js";
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
-
-  console.log({ name, email, password });
 
   if (!name || !email || !password) {
     return res.status(401).json({
       success: false,
       message: "Please fill in all fields",
+    });
+  }
+
+  if (validateEmail(email)) {
+    return res.status(403).json({
+      success: false,
+      message: "Invalid email",
     });
   }
 
@@ -40,13 +42,6 @@ export const register = async (req, res) => {
     }
   );
 
-  const transport = nodemailer.createTransport({
-    service: "gmail",
-    from: process.env.MAIL_FROM,
-    to: email,
-    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
-  });
-
   const emailData = {
     from: process.env.MAIL_FROM,
     to: email,
@@ -60,16 +55,16 @@ export const register = async (req, res) => {
     `,
   };
 
-  transport.sendMail(emailData, (err, info) => {
-    console.log("Done");
-    return res.status(200).json({
-      success: true,
-      message: "you send email",
-    });
-  });
+  sendMail(emailData);
 
   return res.status(200).json({
     success: true,
-    message: "Register Route",
+    message: `Email has been sent to ${email}`,
   });
+};
+
+const validateEmail = (email) => {
+  /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+    email
+  );
 };
