@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import sendMail from "../utils/sendMail.js";
+import nodemailer from "nodemailer";
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -41,26 +41,35 @@ export const register = async (req, res) => {
       expiresIn: "15m",
     }
   );
+  try {
+    const transport = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: "amer.vib582@gmail.com", pass: "mwigegzkbjjmgpmc" },
+    });
 
-  const emailData = {
-    from: process.env.MAIL_FROM,
-    to: email,
-    subject: "TAHAWY ACTIVATION LINK",
-    html: `
+    const mailOptions = {
+      from: "amer.vib582@gmail.com",
+      to: "elfathstore.ymka@gmail.com",
+      subject: "TAHAWY ACTIVATION LINK",
+      html: `
         <h1>Please click on link to activate</h1>
-        <p>${process.env.CLIENT_URL}/users/activate/${token}</p>
-        <hr/>
-        <p>This email contain senstive info</p>
-        <p>${process.env.CLIENT_URL}</p>
+
     `,
-  };
+    };
 
-  sendMail(emailData);
+    transport.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log({ error });
+      } else {
+        console.log("email sent", info);
+        return res.status(201).json({ status: 201, info });
+      }
+    });
+  } catch (error) {
+    return res.status(201).json({ status: 401, error });
+  }
 
-  return res.status(200).json({
-    success: true,
-    message: `Email has been sent to ${email}`,
-  });
+  // // SEND MAIL
 };
 
 const validateEmail = (email) => {
