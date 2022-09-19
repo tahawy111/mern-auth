@@ -52,9 +52,12 @@ export const register = async (req, res) => {
       to: "elfathstore.ymka@gmail.com",
       subject: "TAHAWY ACTIVATION LINK",
       html: `
-        <h1>Please click on link to activate</h1>
-
-    `,
+      <h1>Please click on link to activate</h1>
+      <p>${process.env.CLIENT_URL}/users/activate/${token}</p>
+      <hr/>
+      <p>This email contain senstive info</p>
+      <p>${process.env.CLIENT_URL}</p>
+  `,
     };
 
     transport.sendMail(mailOptions, (error, info) => {
