@@ -51,8 +51,8 @@ export const register = async (req, res) => {
     });
 
     const mailOptions = {
-      from: "amer.vib582@gmail.com",
-      to: "elfathstore.ymka@gmail.com",
+      from: process.env.MAIL_USER,
+      to: email,
       subject: "TAHAWY ACTIVATION LINK",
       html: `
       <h1>Please click on link to activate</h1>
@@ -158,7 +158,40 @@ export const forget = async (req, res) => {
 
   const user = await User.findOne({ email });
   if (!user)
-    return res.status(401).json({ success: false, message: "User not found" });
+    return res
+      .status(401)
+      .json({ success: false, message: "User not found.Please Signup" });
+
+  // Generate Token
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_RESET_PASSWORD, {
+    expiresIn: "10m",
+  });
+
+  // email data sending
+  const emailData = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: "TAHAWY PASSWORD RESET LINK",
+    html: `
+    <h1>Please click on link to reset</h1>
+    <p>${process.env.CLIENT_URL}/users/password/reset/${token}</p>
+    <hr/>
+    <p>This email contain senstive info</p>
+    <p>${process.env.CLIENT_URL}</p>
+`,
+  };
+
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        reset_passwordLink: token,
+      },
+      { new: true }
+    );
+    return res
+      .status(200)
+      .json({ success: true, message: `Email has been sent to ${email}` });
+  } catch (error) {}
 };
 
 const validateEmail = (email) => {

@@ -9,6 +9,7 @@ import { ToastContainer } from "react-toastify";
 import Activate from "./screens/Activate";
 import Login from "./screens/Login";
 import Forget from "./screens/Forget";
+import Reset from "./screens/Reset";
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <BrowserRouter>
@@ -19,6 +20,7 @@ root.render(
       <Route path="/login" element={<Login />} />
       <Route path="/users/password/forget" element={<Forget />} />
       <Route path="/users/activate/:token" element={<Activate />} />
+      <Route path="/users/password/reset/:token" element={<Reset />} />
     </Routes>
   </BrowserRouter>
 );
