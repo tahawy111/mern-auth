@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import authSvg from "../assests/forget.svg";
 import axiosIntance from "../helpers/axios";
