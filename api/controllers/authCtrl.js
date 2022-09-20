@@ -148,6 +148,19 @@ export const login = async (req, res) => {
   });
 };
 
+export const forget = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email)
+    return res
+      .status(403)
+      .json({ success: false, message: "Email is required" });
+
+  const user = await User.findOne({ email });
+  if (!user)
+    return res.status(401).json({ success: false, message: "User not found" });
+};
+
 const validateEmail = (email) => {
   /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
     email
