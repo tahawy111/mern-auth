@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import bcrypt from "bcrypt";
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -34,8 +35,10 @@ export const register = async (req, res) => {
     });
   }
 
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const token = jwt.sign(
-    { name, email, password },
+    { name, email, password: hashedPassword },
     process.env.JWT_ACCOUNT_ACTIVATION,
     {
       expiresIn: "15m",
@@ -71,8 +74,78 @@ export const register = async (req, res) => {
   } catch (error) {
     return res.status(201).json({ status: 401, error });
   }
+};
 
-  // // SEND MAIL
+export const activation = (req, res) => {
+  const { token } = req.body;
+
+  if (token) {
+    jwt.verify(
+      token,
+      process.env.JWT_ACCOUNT_ACTIVATION,
+      async (err, decode) => {
+        if (err) {
+          return res
+            .status(401)
+            .json({ success: false, message: "Expired token. Signup again" });
+        } else {
+          const { name, email, password } = decode;
+          try {
+            const newUser = User({ name, email, password });
+
+            const user = await newUser.save();
+            return res
+              .status(201)
+              .json({ success: true, message: "Signup success", user });
+          } catch (error) {
+            return res.status(401).json({ success: false, error });
+          }
+        }
+      }
+    );
+  } else {
+    return res
+      .status(403)
+      .json({ success: false, message: "token is required" });
+  }
+};
+
+export const login = async (req, res) => {
+  const { password } = req.body;
+  if (!req.body.email || !password) {
+    return res.status(401).json({
+      success: false,
+      message: "Please fill in all fields",
+    });
+  }
+
+  const user = await User.findOne({ email: req.body.email });
+  if (!user)
+    return res.status(401).json({
+      success: false,
+      message: "User with that email does not exist. Please signup",
+    });
+
+  // comparing passwords
+  if (!bcrypt.compare(password, user.password)) {
+    return res.status(401).json({
+      success: false,
+      message: "Password dosen't match",
+    });
+  }
+
+  // generate token
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  const { _id, name, email, role } = user;
+
+  return res.status(200).json({
+    success: true,
+    token,
+    user: { _id, name, email, role },
+  });
 };
 
 const validateEmail = (email) => {

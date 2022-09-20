@@ -48,10 +48,10 @@ export const removeLocalStorage = (key) => {
 };
 
 // auth user after login
-export const authenticate = (response, next) => {
+export const authenticate = (response) => {
   setCookie("token", response.data.token);
-  setLocalStorage("user", response.data.token);
-  next();
+  setLocalStorage("user", JSON.stringify(response.data.user));
+  // next();
 };
 
 // signout
