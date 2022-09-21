@@ -1,11 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import authSvg from "../assests/login.svg";
 import { authenticate, isAuth } from "../helpers/auth";
 import axiosIntance from "../helpers/axios";
+import { GoogleLogin } from "react-google-login";
+import { gapi } from "gapi-script";
+import FacebookLogin from "react-facebook-login/dist/facebook-login-render-props";
 
 const Login = () => {
+  // Support Google Auth
+  useEffect(() => {
+    function start() {
+      gapi.auth2.init({
+        clientId: process.env.REACT_APP_GOOGLE_CLIENT,
+        scope: "",
+      });
+    }
+    gapi.load("client:auth2", start);
+
+    // window.FB.init({
+    //   version: "v" + 2,
+    //   appId: process.env.REACT_APP_GOOGLE_CLIENT,
+    //   xfbml: "",
+    //   cookie: "",
+    // });
+  });
+
   const [formData, setFormData] = useState({
     email: "",
     password1: "",
@@ -15,6 +36,49 @@ const Login = () => {
 
   const handleChange = ({ target }) =>
     setFormData({ ...formData, [target.name]: target.value });
+
+  const sendFacebookToken = async (userId, accessToken) => {
+    try {
+      const res = await axiosIntance.post("/facebooklogin", {
+        userId,
+        accessToken,
+      });
+      console.log(res.data);
+      informParent(res);
+    } catch (error) {
+      toast.error("Facebook Auth error");
+    }
+  };
+
+  const responseFacebook = (response) => {
+    console.log(response);
+    sendFacebookToken(response.userID, response.accessToken);
+  };
+
+  const sendGoogleLogin = async (idToken) => {
+    try {
+      const res = await axiosIntance.post("/auth/googlelogin", {
+        idToken,
+      });
+
+      informParent(res);
+    } catch (error) {
+      toast.error("Google login error");
+    }
+  };
+
+  const informParent = (res) => {
+    localStorage.user && JSON.parse(localStorage.user).role === "Admin"
+      ? navigate("/admin")
+      : navigate("/private");
+
+    authenticate(res);
+  };
+
+  const responseGoogle = (response) => {
+    console.log(response);
+    sendGoogleLogin(response.tokenId);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,6 +144,7 @@ const Login = () => {
                 Forget password?
               </Link>
             </div>
+
             <div className="my-12 border-b text-center">
               <div className="leading-none px-2 inline-block text-sm text-gray-600 tracking-wide font-medium bg-white transform translate-y-1/2">
                 Or Sign Up
@@ -97,6 +162,43 @@ const Login = () => {
               </a>
             </div>
           </form>
+          <GoogleLogin
+            clientId={`${process.env.REACT_APP_GOOGLE_CLIENT}`}
+            onSuccess={responseGoogle}
+            onFailure={responseGoogle}
+            cookiePolicy={`single_host_origin`}
+            render={(renderProps) => (
+              <button
+                style={{ marginLeft: "3.5rem" }}
+                onClick={renderProps.onClick}
+                disabled={renderProps.disabled}
+                className=" mt-6 w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline"
+              >
+                <div className=" p-2 rounded-full ">
+                  <i className="fab fa-google " />
+                </div>
+                <span className="ml-4">Sign In with Google</span>
+              </button>
+            )}
+          />
+          <FacebookLogin
+            appId={`${process.env.REACT_APP_FACEBOOK_CLIENT}`}
+            autoLoad={false}
+            callback={responseFacebook}
+            render={(renderProps) => (
+              <button
+                onClick={renderProps.onClick}
+                style={{ marginLeft: "3.5rem" }}
+                disabled={renderProps.isDisabled}
+                className="w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow focus:shadow-sm focus:shadow-outline mt-5"
+              >
+                <div className=" p-2 rounded-full ">
+                  <i className="fab fa-facebook" />
+                </div>
+                <span className="ml-4">Sign In with Facebook</span>
+              </button>
+            )}
+          />
         </div>
         <div className="flex-1 bg-indigo-100 text-center hidden lg:flex">
           <div

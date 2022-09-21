@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import sendMail from "../helpers/sendMail.js";
+import { OAuth2Client } from "google-auth-library";
+import axios from "axios";
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -226,6 +228,100 @@ export const reset = async (req, res) => {
         success: false,
         message: "Error while reseting user password",
       });
+    }
+  }
+};
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleLogin = (req, res) => {
+  const { idToken } = req.body;
+
+  client
+    .verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID })
+    .then((response) => {
+      console.log("GOOGLE LOGIN RESPONSE", response);
+      const { email_verified, name, email } = response.payload;
+
+      if (email_verified) {
+        User.findOne({ email }).exec(async (err, user) => {
+          if (user) {
+            const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+              expiresIn: "7d",
+            });
+            const { _id, email, name, role } = user;
+            return res.json({
+              token,
+              user: { _id, email, name, role },
+            });
+          } else {
+            let password = await bcrypt.hash(
+              email + process.env.JWT_SECRET,
+              10
+            );
+            user = new User({ name, email, password });
+            user.save((err, data) => {
+              if (err) {
+                console.log("ERROR GOOGLE LOGIN ON USER SAVE", err);
+                return res.status(400).json({
+                  error: "User signup failed with google",
+                });
+              }
+              const token = jwt.sign(
+                { _id: data._id },
+                process.env.JWT_SECRET,
+                { expiresIn: "7d" }
+              );
+              const { _id, email, name, role } = data;
+              return res.json({
+                token,
+                user: { _id, email, name, role },
+              });
+            });
+          }
+        });
+      } else {
+        return res.status(400).json({
+          error: "Google login failed. Try again",
+        });
+      }
+    });
+};
+
+export const facebookLogin = async (req, res) => {
+  const { userId, accessToken } = req.body;
+  const url = `https://graph.facebook.com/v2.11/${userId}?fields=id,name,email&access_token=${accessToken}`;
+
+  const fetchRes = await axios.get(url);
+  const { email, name } = fetchRes.data;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    const { _id, email, name, role } = user;
+    return res.status(200).json({
+      token,
+      user: { _id, email, name, role },
+    });
+  } else {
+    let password = await bcrypt.hash(email + process.env.JWT_SECRET, 10);
+    const user = new User({ name, email, password });
+    try {
+      const savedUser = await user.save();
+      const token = jwt.sign({ _id: data._id }, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      const { _id, email, name, role } = savedUser;
+      return res.status(201).json({
+        token,
+        user: { _id, email, name, role },
+      });
+    } catch (error) {
+      res
+        .status(400)
+        .json({ success: false, message: "User signup failed with facebook" });
     }
   }
 };
