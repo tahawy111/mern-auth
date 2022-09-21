@@ -18,10 +18,11 @@ const Forget = () => {
         const res = await axiosIntance.post("/auth/password/forget", {
           email: formData.email,
         });
+        console.log(res);
         setFormData({ ...formData, email: "" });
         toast.success("Please check your email");
       } catch (error) {
-        toast.error(error.response.data.error);
+        toast.error(error.response.data.message);
       }
     } else {
       toast.error("Please fill in all fields");

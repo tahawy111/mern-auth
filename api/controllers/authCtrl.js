@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
+import sendMail from "../helpers/sendMail.js";
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -44,36 +44,29 @@ export const register = async (req, res) => {
       expiresIn: "15m",
     }
   );
-  try {
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: "amer.vib582@gmail.com", pass: "mwigegzkbjjmgpmc" },
-    });
 
-    const mailOptions = {
-      from: process.env.MAIL_USER,
-      to: email,
-      subject: "TAHAWY ACTIVATION LINK",
-      html: `
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: "TAHAWY ACTIVATION LINK",
+    html: `
       <h1>Please click on link to activate</h1>
       <p>${process.env.CLIENT_URL}/users/activate/${token}</p>
       <hr/>
       <p>This email contain senstive info</p>
       <p>${process.env.CLIENT_URL}</p>
   `,
-    };
+  };
 
-    transport.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log({ error });
-      } else {
-        console.log("email sent", info);
-        return res.status(201).json({ status: 201, info });
-      }
+  sendMail(mailOptions)
+    .then((info) => {
+      return res
+        .status(201)
+        .json({ success: true, message: `Email sent to ${email}` });
+    })
+    .catch((error) => {
+      return res.status(201).json({ status: 401, error });
     });
-  } catch (error) {
-    return res.status(201).json({ status: 401, error });
-  }
 };
 
 export const activation = (req, res) => {
@@ -127,7 +120,7 @@ export const login = async (req, res) => {
     });
 
   // comparing passwords
-  if (!bcrypt.compare(password, user.password)) {
+  if (!bcrypt.compareSync(password, user.password)) {
     return res.status(401).json({
       success: false,
       message: "Password dosen't match",
@@ -181,6 +174,8 @@ export const forget = async (req, res) => {
 `,
   };
 
+  sendMail(emailData);
+
   try {
     const updatedUser = await User.findOneAndUpdate(
       {
@@ -192,6 +187,47 @@ export const forget = async (req, res) => {
       .status(200)
       .json({ success: true, message: `Email has been sent to ${email}` });
   } catch (error) {}
+};
+
+export const reset = async (req, res) => {
+  const { newPassword, resetPasswordLink } = req.body;
+
+  if (resetPasswordLink) {
+    jwt.verify(
+      resetPasswordLink,
+      process.env.JWT_RESET_PASSWORD,
+      (error, decoded) => {
+        if (error)
+          return res
+            .status(401)
+            .json({ success: false, message: "Expired link. Try again" });
+      }
+    );
+
+    const user = await User.findOne({ resetPasswordLink });
+    if (!user)
+      return res.status(404).json({
+        success: false,
+        message:
+          "Something went wrong Please try again from the beginning and send email",
+      });
+
+    user.reset_passwordLink = "";
+    user.password = await bcrypt.hash(newPassword, 10);
+
+    try {
+      await user.save();
+      res.status(200).json({
+        success: true,
+        message: "Great! Now you can login with new password",
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: "Error while reseting user password",
+      });
+    }
+  }
 };
 
 const validateEmail = (email) => {

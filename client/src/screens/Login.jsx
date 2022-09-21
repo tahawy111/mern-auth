@@ -30,7 +30,7 @@ const Login = () => {
           : navigate("/private");
         toast.success(`Hey ${res.data.user.name}, Welcome back`);
       } catch (error) {
-        toast.error(error.response.data.error);
+        toast.error(error.response.data.message);
       }
     } else {
       toast.error("Please fill in all fields");
