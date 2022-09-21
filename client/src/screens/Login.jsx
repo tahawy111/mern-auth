@@ -18,13 +18,6 @@ const Login = () => {
       });
     }
     gapi.load("client:auth2", start);
-
-    // window.FB.init({
-    //   version: "v" + 2,
-    //   appId: process.env.REACT_APP_GOOGLE_CLIENT,
-    //   xfbml: "",
-    //   cookie: "",
-    // });
   });
 
   const [formData, setFormData] = useState({
@@ -39,11 +32,10 @@ const Login = () => {
 
   const sendFacebookToken = async (userId, accessToken) => {
     try {
-      const res = await axiosIntance.post("/facebooklogin", {
+      const res = await axiosIntance.post("/auth/facebooklogin", {
         userId,
         accessToken,
       });
-      console.log(res.data);
       informParent(res);
     } catch (error) {
       toast.error("Facebook Auth error");
